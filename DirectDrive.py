@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------
 # This Software is for creating a Direct Drive ForceFeedback
 # Steering Wheel for Driving Simulations.
