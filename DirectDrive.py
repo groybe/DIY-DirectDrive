@@ -121,12 +121,12 @@ class DirectDriveWindow(QWidget):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.graph_update)
-        self.timer.setInterval(1000 / self.graph_sample_rate)
+        self.timer.setInterval(int(1000 / self.graph_sample_rate))
         self.timer.start()
 
         self.gui_timer = QTimer()
         self.gui_timer.timeout.connect(self.LiveGuiTick)
-        self.gui_timer.setInterval(1000 / 60)
+        self.gui_timer.setInterval(int(1000 / 60))
         self.gui_timer.start()
 
         self.virtual_controller = VirtualController()
@@ -477,7 +477,7 @@ class DirectDriveWindow(QWidget):
     def LiveGuiTick(self):
         self.lblWheelPos.setText(str(int(self.wheel_position_deg_global.value*10)/10)+'°')
 
-        self.lblCurrent.resize(np.abs(self.motor_current_global.value/(self.actual_max_force_global.value*2.75)*128), 25)
+        self.lblCurrent.resize(int(np.abs(self.motor_current_global.value/(self.actual_max_force_global.value*2.75)*128)), 25)
         if self.motor_current_global.value < 0.0:
             self.lblCurrent.move(25+128 - np.abs(self.motor_current_global.value/(self.actual_max_force_global.value*2.75)*128), 25)
 
@@ -498,7 +498,7 @@ class DirectDriveWindow(QWidget):
             self.lblWheelPos.setStyleSheet('QLabel { color: rgb(155,155,155); }')
 
         diagonal_overlength = (np.sqrt(np.square(256) * 2) - 256) / 2
-        shift = np.abs(np.sin(np.deg2rad(self.wheel_position_deg_global.value * 2)) * diagonal_overlength)
+        shift = int(np.abs(np.sin(np.deg2rad(self.wheel_position_deg_global.value * 2)) * diagonal_overlength))
         crop_rect = QRect(shift, shift, 256, 256)
         self.wheel_pixmap = QPixmap.fromImage(img_rot).copy(crop_rect)
         self.lblWheelImage.setPixmap(self.wheel_pixmap)
