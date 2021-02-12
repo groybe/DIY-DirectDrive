@@ -1,6 +1,7 @@
 import time
 import datetime
 from multiprocessing import Process, Value
+from rwmem import *
 
 # import the structs for Shared Memory Mapping for Assetto Corsa and Assetto Corsa Competizione
 import AssettoCorsaMemoryMapping
@@ -11,7 +12,7 @@ import AssettoCorsaCompMemoryMapping
 
 # class for handling the interfacing with different games
 class GameInterfacer:
-    games_available = ['None', 'Assetto Corsa', 'Assetto Corsa Competizione']       # holds list of all supported games
+    games_available = ['None', 'Assetto Corsa', 'Assetto Corsa Competizione', 'Richard Burns Rally']       # holds list of all supported games
     game_interface_process = None                                                   # holds an instance of the Process-class
                                                                                     # for sending a virtual controller signal
 
@@ -40,6 +41,16 @@ class GameInterfacer:
         elif game_index == 2:
             print('start interfaceing process for:', self.games_available[game_index])
             self.game_interface_process = Process(target=self.interface_assetto_corsa_comp,
+                                                  args=(self.terminator,
+                                                        self.control_freq,
+                                                        self.wheel_force,
+                                                        self.invert_force,
+                                                        self.game_status_playing))
+            self.terminator.value = False
+            self.game_interface_process.start()
+        elif game_index == 3:
+            print('start interfaceing process for:', self.games_available[game_index])
+            self.game_interface_process = Process(target=self.interface_richard_burns_rally,
                                                   args=(self.terminator,
                                                         self.control_freq,
                                                         self.wheel_force,
@@ -149,6 +160,64 @@ class GameInterfacer:
         wheel_force.value = 0.0
         game_status_playing.value = False
         print('disconnecting from Assetto Corsa Competizione')
+        
+    # function for interfacing with Richard Burns Rally
+    def interface_richard_burns_rally(self, terminator, freq, wheel_force, invert_force, game_status_playing):
+        try:
+            memory.open('RichardBurnsRally_SSE.exe')
+            ffb_pointer = memory.read(0x007eac48, TYPE="int") + 0xc04
+            driving_pointer = memory.read(0x007eac48, TYPE="int") + 0x728
+        except:
+            pass
+        print('connecting to Richard Burns Rally')
+
+        last_frame_overtime = 0.0
+        while not terminator.value:
+            start = datetime.datetime.now()
+            #print('listening to richard burns rally')
+
+
+
+
+
+            try:
+                force = memory.read(ffb_pointer, TYPE="float")
+            except:
+                force = 0.0
+                pass
+            if invert_force.value:
+                wheel_force.value = -force
+            else:
+                wheel_force.value = force
+
+            try:
+                if memory.read(driving_pointer, TYPE="int") == 1:
+                    game_status_playing.value = True
+                else:
+                    game_status_playing.value = False
+            except:
+                game_status_playing.value = False
+                pass
+
+
+
+
+
+            end = datetime.datetime.now()
+            real_delta_t = (end - start).microseconds / 1000
+            combined_delta_t = real_delta_t + last_frame_overtime
+            if combined_delta_t <= 1000 / freq.value:
+                sleep_time = ((1000 / freq.value) - combined_delta_t)
+                time.sleep(sleep_time / 1000)
+                last_frame_overtime = 0.0
+            else:
+                last_frame_overtime += real_delta_t - (1000 / freq.value)
+                #real_end = datetime.datetime.now()
+                # print('art. delta_t:', (real_end - start).microseconds / 1000)
+
+        wheel_force.value = 0.0
+        game_status_playing.value = False
+        print('disconnecting from Richard Burns Rally')        
 
 
 
